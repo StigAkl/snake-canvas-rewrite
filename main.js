@@ -1,6 +1,6 @@
 const blockSize = 25;
 
-class Position {
+class Vector2D {
   constructor(x, y) {
     this.x = x;
     this.y = y;
@@ -9,12 +9,8 @@ class Position {
 
 class Snake {
   constructor() {
-    this.snakeHeadPosition = new Position(0, 0);
+    this.snakeHeadPosition = new Vector2D(0, 0);
     this.body = [];
-  }
-
-  addBody(position) {
-    this.body.push(position);
   }
 
   get headPosition() {
@@ -29,7 +25,7 @@ class Snake {
 
 class BuddhasHand {
   constructor() {
-    this.position = new Position(0, 0);
+    this.position = new Vector2D(0, 0);
   }
 
   newPosition(position) {
@@ -41,7 +37,6 @@ class Board {
   constructor(rows, cols) {
     this.board = document.getElementById("snake");
     this.ctx = this.board.getContext("2d");
-    //this.ctx.imageSmoothingEnabled = true;
     this.height = cols * blockSize;
     this.width = rows * blockSize;
     this.board.height = this.height;
@@ -65,6 +60,10 @@ class Board {
       blockSize
     );
 
+    for (let i = 0; i < snake.body.length; i++) {
+      this.ctx.fillRect(snake.body[i].x, snake.body[i].y, blockSize, blockSize);
+    }
+
     this.ctx.fillStyle = "red";
     this.ctx.fillRect(
       buddhasHand.position.x,
@@ -78,34 +77,45 @@ class Board {
 class SnakeGame {
   constructor() {
     this.snake = new Snake();
-    this.board = new Board(12, 12);
-    this.velocity = new Position(1, 0);
+    this.board = new Board(40, 40);
+    this.velocity = new Vector2D(1, 0);
     this.gameOver = false;
     this.buddhasHand = new BuddhasHand();
+    this.points = 0;
   }
 
   startGame() {
     this.buddhasHand.newPosition(this.generateRandomPosition());
-    this.board.updateBoard(
-      this.snake,
-      this.buddhasHand,
-      this.snake,
-      this.buddhasHand
-    );
     setInterval(() => {
       this.gameInteration();
-    }, 100);
+    }, 69);
   }
   gameInteration() {
-    this.snake.newPosition(this.velocity);
     this.gameOver = this.isGameOver();
     if (!this.gameOver) {
       this.board.updateBoard(this.snake, this.buddhasHand);
 
       if (this.hitBuddhasHand()) {
-        console.log("Buddhas hand hit!");
-        this.buddhasHand.newPosition(this.generateRandomPosition());
+        this.points += 1;
+        const newBuddhasHandPosition = this.generateRandomPosition();
+        this.snake.body.push(
+          new Vector2D(this.buddhasHand.position.x, this.buddhasHand.position.y)
+        );
+        this.buddhasHand.newPosition(
+          new Vector2D(newBuddhasHandPosition.x, newBuddhasHandPosition.y)
+        );
       }
+
+      for (let i = this.snake.body.length - 1; i > 0; i--) {
+        this.snake.body[i].x = this.snake.body[i - 1].x;
+        this.snake.body[i].y = this.snake.body[i - 1].y;
+      }
+
+      if (this.snake.body.length) {
+        this.snake.body[0].x = this.snake.snakeHeadPosition.x;
+        this.snake.body[0].y = this.snake.snakeHeadPosition.y;
+      }
+      this.snake.newPosition(this.velocity);
     }
   }
 
@@ -119,7 +129,7 @@ class SnakeGame {
   generateRandomPosition() {
     const rows = this.board.width / blockSize;
     const cols = this.board.height / blockSize;
-    const position = new Position(
+    const position = new Vector2D(
       Math.floor(Math.random() * rows) * blockSize,
       Math.floor(Math.random() * cols) * blockSize
     );
@@ -136,8 +146,7 @@ class SnakeGame {
       yPos == this.board.height ||
       yPos < 0
     ) {
-      this.velocity = new Position(0, 0);
-      document.getElementById("state").innerHTML = "GAME OVER BITCH";
+      this.velocity = new Vector2D(0, 0);
       return true;
     }
     return false;
@@ -145,22 +154,20 @@ class SnakeGame {
 }
 
 const snakeGame = new SnakeGame();
-
 snakeGame.startGame();
-
 const keyPressedHandler = (e) => {
   switch (e.key) {
     case "ArrowLeft":
-      snakeGame.velocity = new Position(-1, 0);
+      snakeGame.velocity = new Vector2D(-1, 0);
       break;
     case "ArrowRight":
-      snakeGame.velocity = new Position(1, 0);
+      snakeGame.velocity = new Vector2D(1, 0);
       break;
     case "ArrowUp":
-      snakeGame.velocity = new Position(0, -1);
+      snakeGame.velocity = new Vector2D(0, -1);
       break;
     case "ArrowDown":
-      snakeGame.velocity = new Position(0, 1);
+      snakeGame.velocity = new Vector2D(0, 1);
       break;
   }
 };
